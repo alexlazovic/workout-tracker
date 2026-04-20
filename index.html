@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="4-Day Trainer" />
+  <link rel="manifest" href="./manifest.json" />
+  <title>4-Day Workout Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; background: #0a0a0a; }
+    body { overflow-x: hidden; color: #f0f0f0; font-family: 'DM Sans', sans-serif; }
+    input[type=number], input[type=text], input[type=date] {
+      background: #181818; border: 1px solid #252525; color: #f0f0f0;
+      border-radius: 6px; padding: 7px 10px; font-family: 'DM Mono', monospace;
+      font-size: 13px; outline: none; width: 100%; transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+    input:focus { border-color: #444; }
+    input[type=number]::-webkit-inner-spin-button { opacity: 0.3; }
+    button { border: none; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; font-family: inherit; }
+    button:active { opacity: 0.7; transform: scale(0.97); }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const WORKOUTS = {
+  L1: {
+    label: "Lower A", day: "Monday", theme: "#c8f135", name: "Heavy Glute Mass",
+    exercises: [
+      { id: "ht",       name: "Hip Thrust",                sets: 4, repsTarget: "6–8",     type: "Compound" },
+      { id: "rdl",      name: "Romanian Deadlift",         sets: 3, repsTarget: "6–8",     type: "Compound" },
+      { id: "slp",      name: "Single-Leg Press",          sets: 3, repsTarget: "12–15",   type: "Compound" },
+      { id: "calves",   name: "Calf Raises (Leg Press)",   sets: 3, repsTarget: "15",      type: "Isolation" },
+      { id: "legext",   name: "Leg Extension",             sets: 3, repsTarget: "15",      type: "Isolation" },
+    ]
+  },
+  L2: {
+    label: "Lower B", day: "Thursday", theme: "#ff6b6b", name: "3D Glute Sculpt",
+    exercises: [
+      { id: "bss",      name: "Bulgarian Split Squat",     sets: 3, repsTarget: "8–10",    type: "Compound" },
+      { id: "abduc",    name: "Cable Abduction (45°)",     sets: 3, repsTarget: "12–15",   type: "Isolation" },
+      { id: "adduc",    name: "Adduction Machine",         sets: 3, repsTarget: "12–15",   type: "Isolation" },
+      { id: "legcurl",  name: "Leg Curl",                  sets: 3, repsTarget: "12–15",   type: "Isolation" },
+      { id: "legraise", name: "Hanging Leg Raises",        sets: 3, repsTarget: "failure", type: "Core" },
+    ]
+  },
+  U1: {
+    label: "Upper A", day: "Tuesday", theme: "#6bc5ff", name: "Back & Shoulders (Width)",
+    exercises: [
+      { id: "latpull",  name: "Single-Arm Lat Pulldown",   sets: 3, repsTarget: "10–12",   type: "Compound" },
+      { id: "dbrow",    name: "Single-Arm DB Rows",        sets: 3, repsTarget: "8–10",    type: "Compound" },
+      { id: "lateraise",name: "Dumbbell Lateral Raises",   sets: 4, repsTarget: "15",      type: "Isolation" },
+      { id: "hamcurl",  name: "DB Hammer Curls",           sets: 3, repsTarget: "12",      type: "Isolation" },
+      { id: "tricep",   name: "Overhead Cable Tricep Ext", sets: 3, repsTarget: "12",      type: "Isolation" },
+    ]
+  },
+  U2: {
+    label: "Upper B", day: "Friday", theme: "#aacf3f", name: "Shoulders & Back (Posture)",
+    exercises: [
+      { id: "dbpress",  name: "Dumbbell Shoulder Press",   sets: 3, repsTarget: "8–10",    type: "Compound" },
+      { id: "widepull", name: "Wide Grip Lat Pulldown",    sets: 3, repsTarget: "10–12",   type: "Compound" },
+      { id: "facepull", name: "Face Pulls (Cables)",       sets: 3, repsTarget: "15",      type: "Isolation" },
+      { id: "plank",    name: "Plank",                     sets: 3, repsTarget: "60 sec",  type: "Core" },
+      { id: "deadbug",  name: "Dead Bugs",                 sets: 3, repsTarget: "12/side", type: "Core" },
+    ]
+  }
+};
+
+const TYPE_COLORS = {
+  Compound:  { bg: "rgba(200,241,53,0.12)",  color: "#c8f135", border: "rgba(200,241,53,0.25)" },
+  Isolation: { bg: "rgba(107,197,255,0.12)", color: "#6bc5ff", border: "rgba(107,197,255,0.25)" },
+  Core:      { bg: "rgba(255,107,107,0.12)", color: "#ff6b6b", border: "rgba(255,107,107,0.25)" },
+};
+
+const REST_SECONDS = { Compound: 180, Isolation: 90, Core: 45 };
+
+function getToday() { return new Date().toISOString().split("T")[0]; }
+function skey(date, day) { return "trk:" + date + "_" + day; }
+
+function lsGet(key) { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch(_) { return null; } }
+function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch(_) { return false; } }
+function lsDel(key) { try { localStorage.removeItem(key); } catch(_) {} }
+function lsList(prefix) { const keys = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(prefix)) keys.push(k); } } catch(_) {} return keys; }
+
+export default function App() {
+  const [activeDay, setActiveDay]     = useState("L1");
+  const [sessionDate, setSessionDate] = useState(getToday());
+  const [sessionData, setSessionData] = useState({});
+  const [history, setHistory]         = useState([]);
+  const [view, setView]               = useState("log");
+  const [saveState, setSaveState]     = useState("idle");
+  const [toast, setToast]             = useState(null);
+  const [timer, setTimer]             = useState(null);
+  const timerInterval                 = useRef(null);
+  const activeDayRef                  = useRef("L1");
+  const sessionDateRef                = useRef(getToday());
+  const sessionDataRef                = useRef({});
+
+  useEffect(() => { activeDayRef.current = activeDay; },    [activeDay]);
+  useEffect(() => { sessionDateRef.current = sessionDate; },[sessionDate]);
+  useEffect(() => { sessionDataRef.current = sessionData; },[sessionData]);
+
+  useEffect(() => {
+    const data = lsGet(skey(sessionDate, activeDay));
+    setSessionData(data || {});
+  }, [sessionDate, activeDay]);
+
+  const loadHistory = useCallback(() => {
+    const cur = skey(sessionDate, activeDay);
+    const prefix = "trk:";
+    const allKeys = lsList(prefix);
+    const dayKeys = allKeys.filter(k => k.endsWith("_" + activeDay) && k !== cur);
+    const entries = dayKeys.map(k => {
+      const data = lsGet(k);
+      const date = k.replace(prefix, "").replace("_" + activeDay, "");
+      return { date, exMap: data || {} };
+    });
+    setHistory(entries.sort((a, b) => b.date.localeCompare(a.date)));
+  }, [activeDay, sessionDate]);
+
+  useEffect(() => { loadHistory(); }, [loadHistory]);
+
+  const persist = useCallback((data, day, date) => {
+    const d  = day  !== undefined ? day  : activeDayRef.current;
+    const dt = date !== undefined ? date : sessionDateRef.current;
+    setSaveState("saving");
+    const ok = lsSet(skey(dt, d), data);
+    setSaveState(ok ? "saved" : "error");
+  }, []);
+
+  const updateSet = useCallback((exId, setIdx, field, value) => {
+    setSessionData(prev => {
+      const arr = prev[exId] ? [...prev[exId]] : [];
+      while (arr.length <= setIdx) arr.push({ weight: "", reps: "", note: "" });
+      arr[setIdx] = { ...arr[setIdx], [field]: value };
+      const next = { ...prev, [exId]: arr };
+      persist(next);
+      return next;
+    });
+  }, [persist]);
+
+  const switchDay = useCallback((newDay) => {
+    if (newDay === activeDayRef.current) return;
+    persist(sessionDataRef.current, activeDayRef.current, sessionDateRef.current);
+    setActiveDay(newDay);
+  }, [persist]);
+
+  const clearSession = () => {
+    lsDel(skey(sessionDate, activeDay));
+    setSessionData({});
+    showToast("Session cleared");
+  };
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  };
+
+  const startTimer = useCallback((exType) => {
+    if (timerInterval.current) clearInterval(timerInterval.current);
+    const total = REST_SECONDS[exType] || 90;
+    setTimer({ exType, total, remaining: total });
+    timerInterval.current = setInterval(() => {
+      setTimer(prev => {
+        if (!prev) return null;
+        if (prev.remaining <= 1) {
+          clearInterval(timerInterval.current);
+          try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(_) {}
+          return { ...prev, remaining: 0 };
+        }
+        return { ...prev, remaining: prev.remaining - 1 };
+      });
+    }, 1000);
+  }, []);
+
+  const dismissTimer = useCallback(() => {
+    if (timerInterval.current) clearInterval(timerInterval.current);
+    setTimer(null);
+  }, []);
+
+  useEffect(() => { return () => { if (timerInterval.current) clearInterval(timerInterval.current); }; }, []);
+
+  const workout   = WORKOUTS[activeDay];
+  const prevSess  = history[0] || null;
+  const saveColor = saveState === "error" ? "#ff6b6b" : saveState === "saved" ? "#c8f135" : saveState === "saving" ? "#888" : "#2a2a2a";
+  const saveLabel = saveState === "error" ? "● fail" : saveState === "saved" ? "● saved" : saveState === "saving" ? "● saving" : "● ready";
+
+  return (
+    <div style={{ background: "#0a0a0a", minHeight: "100vh", paddingBottom: 100, paddingTop: "env(safe-area-inset-top)" }}>
+
+      {toast && (
+        <div style={{ position: "fixed", bottom: 40, left: "50%", transform: "translateX(-50%)", background: "#c8f135", color: "#000", padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 12, zIndex: 999, fontFamily: "'DM Mono', monospace", whiteSpace: "nowrap", animation: "slideUp 0.2s ease" }}>
+          {toast}
+        </div>
+      )}
+
+      <div style={{ padding: "40px 24px 20px", borderBottom: "1px solid #181818" }}>
+        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 4, color: "#c8f135", marginBottom: 8 }}>// WORKOUT TRACKER</div>
+        <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 56, lineHeight: 0.88, letterSpacing: 2, marginBottom: 16 }}>
+          4-DAY<br /><span style={{ color: "#c8f135" }}>PLAN</span>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <input type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)} style={{ width: 155 }} />
+          <div style={{ display: "flex", background: "#111", border: "1px solid #1e1e1e", borderRadius: 8, overflow: "hidden" }}>
+            {["log","history"].map(v => (
+              <button key={v} onClick={() => setView(v)} style={{ padding: "8px 16px", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", background: view === v ? "#222" : "transparent", color: view === v ? "#f0f0f0" : "#444" }}>
+                {v}
+              </button>
+            ))}
+          </div>
+          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1, color: saveColor, animation: saveState === "saving" ? "blink 0.8s infinite" : "none" }}>
+            {saveLabel}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, padding: "18px 24px 0", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        {Object.entries(WORKOUTS).map(([key, w]) => (
+          <button key={key} onClick={() => switchDay(key)} style={{ background: activeDay === key ? w.theme : "#111", color: activeDay === key ? "#000" : "#555", border: "1px solid " + (activeDay === key ? w.theme : "#1e1e1e"), borderRadius: 10, padding: "10px 18px", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", boxShadow: activeDay === key ? "0 0 20px " + w.theme + "44" : "none", flexShrink: 0 }}>
+            {w.label} <span style={{ fontWeight: 300, opacity: 0.65, fontSize: 11, marginLeft: 4 }}>· {w.day}</span>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: "14px 24px 0" }}>
+        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderTop: "3px solid " + workout.theme, borderRadius: 12, padding: "15px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 20, color: workout.theme, letterSpacing: 1 }}>{workout.name}</div>
+            <div style={{ fontSize: 11, color: "#333", marginTop: 2 }}>{sessionDate} · {workout.exercises.length} exercises</div>
+          </div>
+          <button onClick={clearSession} style={{ background: "transparent", border: "1px solid #252525", color: "#444", borderRadius: 6, padding: "6px 14px", fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1 }}>
+            CLEAR
+          </button>
+        </div>
+      </div>
+
+      {view === "log" && (
+        <div style={{ padding: "14px 24px 0", display: "flex", flexDirection: "column", gap: 12 }}>
+          {workout.exercises.map((ex, ei) => {
+            const tc      = TYPE_COLORS[ex.type];
+            const sets    = sessionData[ex.id] || [];
+            const prevS   = prevSess?.exMap?.[ex.id] || [];
+            const prevW   = prevS.map(s => parseFloat(s.weight)).filter(Boolean);
+            const maxPrev = prevW.length ? Math.max(...prevW) : null;
+            const currW   = sets.map(s => parseFloat(s.weight)).filter(Boolean);
+            const maxCurr = currW.length ? Math.max(...currW) : null;
+            const diff    = maxCurr !== null && maxPrev !== null ? +(maxCurr - maxPrev).toFixed(1) : null;
+
+            return (
+              <div key={ex.id} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ padding: "13px 18px", borderBottom: "1px solid #161616", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#252525" }}>{String(ei + 1).padStart(2, "0")}</span>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>{ex.name}</div>
+                      <div style={{ fontSize: 11, color: "#3a3a3a", marginTop: 2 }}>Target: {ex.sets} × {ex.repsTarget}</div>
+                    </div>
+                  </div>
+                  <span style={{ background: tc.bg, color: tc.color, border: "1px solid " + tc.border, borderRadius: 4, padding: "2px 8px", fontSize: 9, fontFamily: "'DM Mono', monospace", letterSpacing: 1, flexShrink: 0 }}>
+                    {ex.type}
+                  </span>
+                </div>
+
+                <div style={{ padding: "10px 18px 14px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, marginBottom: 4 }}>
+                    {["SET","KG","REPS","NOTE",""].map((h, i) => (
+                      <div key={i} style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: "#252525", letterSpacing: 2 }}>{h}</div>
+                    ))}
+                  </div>
+
+                  {Array.from({ length: ex.sets }).map((_, si) => {
+                    const s      = sets[si] || {};
+                    const filled = s.weight || s.reps;
+                    return (
+                      <div key={si} style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, marginBottom: 5, alignItems: "center" }}>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: filled ? workout.theme : "#252525", fontWeight: filled ? 700 : 400 }}>
+                          {si + 1}
+                        </div>
+                        <input type="number" placeholder="—" value={s.weight || ""} min="0" step="0.5" onChange={e => updateSet(ex.id, si, "weight", e.target.value)} />
+                        <input type="text" placeholder={ex.repsTarget} value={s.reps || ""} onChange={e => updateSet(ex.id, si, "reps", e.target.value)} />
+                        <input type="text" placeholder="note" value={s.note || ""} onChange={e => updateSet(ex.id, si, "note", e.target.value)} />
+                        <button onClick={() => startTimer(ex.type)} style={{ background: filled ? tc.bg : "#111", border: "1px solid " + (filled ? tc.border : "#1e1e1e"), color: filled ? tc.color : "#2a2a2a", borderRadius: 6, padding: "7px 0", fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: 0.5, width: "100%" }}>
+                          REST
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {maxPrev !== null && (
+                    <div style={{ marginTop: 8, padding: "6px 10px", background: "#0d0d0d", borderRadius: 6, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#252525", letterSpacing: 1 }}>PREV {prevSess.date}</span>
+                      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#444" }}>max {maxPrev}kg</span>
+                      {diff !== null && (
+                        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, fontWeight: 700, color: diff > 0 ? "#c8f135" : diff < 0 ? "#ff6b6b" : "#444" }}>
+                          {diff > 0 ? "▲ +" + diff : diff < 0 ? "▼ " + diff : "→ same"}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {(() => {
+            const logged = workout.exercises.reduce((n, ex) => n + (sessionData[ex.id] || []).filter(s => s.weight || s.reps).length, 0);
+            const total  = workout.exercises.reduce((n, ex) => n + ex.sets, 0);
+            const pct    = Math.min(100, Math.round((logged / total) * 100));
+            return (
+              <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, padding: "16px 20px", display: "flex", gap: 16, alignItems: "center" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: "#2a2a2a", letterSpacing: 2, marginBottom: 6 }}>SESSION PROGRESS</div>
+                  <div style={{ height: 4, background: "#1a1a1a", borderRadius: 2 }}>
+                    <div style={{ height: "100%", width: pct + "%", background: workout.theme, borderRadius: 2, transition: "width 0.4s ease" }} />
+                  </div>
+                </div>
+                <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 36, color: workout.theme, lineHeight: 1 }}>
+                  {logged}<span style={{ color: "#222", fontSize: 20 }}>/{total}</span>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {view === "history" && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 26, color: workout.theme, letterSpacing: 1, marginBottom: 14 }}>
+            {workout.label} · Past Sessions
+          </div>
+          {history.length === 0 ? (
+            <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, padding: 40, textAlign: "center", fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#2a2a2a" }}>
+              No past sessions yet.
+            </div>
+          ) : history.map(({ date, exMap }) => {
+            const filled = workout.exercises.filter(ex => exMap[ex.id]?.some(s => s.weight || s.reps));
+            if (!filled.length) return null;
+            return (
+              <div key={date} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
+                <div style={{ padding: "12px 18px", borderBottom: "1px solid #161616", background: "#0d0d0d", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: workout.theme }}>{date}</span>
+                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#2a2a2a" }}>{filled.length} ex</span>
+                </div>
+                <div style={{ padding: "12px 18px" }}>
+                  {filled.map(ex => {
+                    const sets = (exMap[ex.id] || []).filter(s => s.weight || s.reps);
+                    return (
+                      <div key={ex.id} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "#bbb", marginBottom: 5 }}>{ex.name}</div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {sets.map((s, i) => (
+                            <span key={i} style={{ background: "#181818", border: "1px solid #202020", borderRadius: 6, padding: "4px 10px", fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#777" }}>
+                              {s.weight ? s.weight + "kg" : "—"} × {s.reps || "—"}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {timer !== null && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 24, padding: "40px 48px", display: "flex", flexDirection: "column", alignItems: "center", gap: 20, minWidth: 260 }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 4, color: "#444", textTransform: "uppercase" }}>
+              {timer.remaining === 0 ? "Go again!" : "Rest · " + timer.exType}
+            </div>
+            {(() => {
+              const done  = timer.remaining === 0;
+              const pct   = timer.remaining / timer.total;
+              const r     = 54;
+              const circ  = 2 * Math.PI * r;
+              const dash  = circ * pct;
+              const col   = done ? "#c8f135" : timer.exType === "Compound" ? "#c8f135" : timer.exType === "Isolation" ? "#6bc5ff" : "#ff6b6b";
+              const mins  = Math.floor(timer.remaining / 60);
+              const secs  = timer.remaining % 60;
+              const label = mins > 0 ? mins + ":" + String(secs).padStart(2, "0") : String(secs);
+              return (
+                <div style={{ position: "relative", width: 130, height: 130 }}>
+                  <svg width="130" height="130" style={{ transform: "rotate(-90deg)", display: "block" }}>
+                    <circle cx="65" cy="65" r={r} fill="none" stroke="#1a1a1a" strokeWidth="6" />
+                    <circle cx="65" cy="65" r={r} fill="none" stroke={col} strokeWidth="6" strokeLinecap="round" strokeDasharray={dash + " " + circ} style={{ transition: "stroke-dasharray 0.95s linear" }} />
+                  </svg>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: done ? 36 : 46, color: done ? "#c8f135" : "#fff", lineHeight: 1, letterSpacing: 1 }}>
+                      {done ? "GO" : label}
+                    </div>
+                    {!done && (
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#333", marginTop: 2 }}>
+                        {"/ " + (timer.total >= 60 ? Math.floor(timer.total/60) + ":" + String(timer.total%60).padStart(2,"0") : timer.total + "s")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+            <button onClick={dismissTimer} style={{ background: timer.remaining === 0 ? "#c8f135" : "#1a1a1a", color: timer.remaining === 0 ? "#000" : "#666", border: "1px solid " + (timer.remaining === 0 ? "#c8f135" : "#2a2a2a"), borderRadius: 10, padding: "12px 32px", fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: 2, fontWeight: timer.remaining === 0 ? 700 : 400 }}>
+              {timer.remaining === 0 ? "START SET" : "SKIP"}
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
