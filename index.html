@@ -195,6 +195,53 @@ function App() {
     setTimer(null);
   }, []);
 
+  const exportData = () => {
+    const prefix = "trk:";
+    const allKeys = lsList(prefix);
+    const dump = {};
+    allKeys.forEach(k => { const v = lsGet(k); if (v) dump[k] = v; });
+    if (Object.keys(dump).length === 0) { showToast("Nothing to export"); return; }
+    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "workouts-" + getToday() + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Exported " + allKeys.length + " sessions");
+  };
+
+  const importData = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          let count = 0;
+          Object.entries(data).forEach(([k, v]) => {
+            if (k.startsWith("trk:") && typeof v === "object") {
+              lsSet(k, v);
+              count++;
+            }
+          });
+          loadHistory();
+          const reloaded = lsGet(skey(sessionDate, activeDay));
+          setSessionData(reloaded || {});
+          showToast("Imported " + count + " sessions");
+        } catch(_) {
+          showToast("Invalid file");
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   useEffect(() => { return () => { if (timerInterval.current) clearInterval(timerInterval.current); }; }, []);
 
   const workout   = WORKOUTS[activeDay];
@@ -342,8 +389,18 @@ function App() {
 
       {view === "history" && (
         <div style={{ padding: "18px 24px 0" }}>
-          <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 26, color: workout.theme, letterSpacing: 1, marginBottom: 14 }}>
-            {workout.label} · Past Sessions
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 26, color: workout.theme, letterSpacing: 1 }}>
+              {workout.label} · Past Sessions
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={exportData} style={{ background: "#111", border: "1px solid #252525", color: "#888", borderRadius: 6, padding: "6px 12px", fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1 }}>
+                EXPORT
+              </button>
+              <button onClick={importData} style={{ background: "#111", border: "1px solid #252525", color: "#888", borderRadius: 6, padding: "6px 12px", fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1 }}>
+                IMPORT
+              </button>
+            </div>
           </div>
           {history.length === 0 ? (
             <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, padding: 40, textAlign: "center", fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#2a2a2a" }}>
