@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="4-Day Trainer" />
+  <meta name="apple-mobile-web-app-title" content="4SPLIT" />
   <link rel="manifest" href="./manifest.json" />
-  <title>4-Day Workout Tracker</title>
+  <title>4SPLIT</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,13 +40,25 @@
 <script type="text/babel">
 const { useState, useEffect, useCallback, useRef } = React;
 
+/* ═══════════════════════ DATA ═══════════════════════ */
+
+const SCHEDULE = [
+  { day: "Sun", key: "L1", type: "sunday" },
+  { day: "Mon", key: null,  type: "rest" },
+  { day: "Tue", key: "U1", type: "train" },
+  { day: "Wed", key: null,  type: "rest" },
+  { day: "Thu", key: "L2", type: "train" },
+  { day: "Fri", key: "U2", type: "train" },
+  { day: "Sat", key: null,  type: "rest" },
+];
+
 const WORKOUTS = {
   L1: {
-    label: "Lower A", day: "Monday", theme: "#c8f135", name: "Heavy Glute Mass",
+    label: "Lower A", day: "Sunday", theme: "#c8f135", name: "Heavy Glute Mass",
     exercises: [
-      { id: "ht",       name: "Hip Thrust",                sets: 4, repsTarget: "6–8",     type: "Compound" },
-      { id: "rdl",      name: "Romanian Deadlift",         sets: 3, repsTarget: "6–8",     type: "Compound" },
-      { id: "slp",      name: "Single-Leg Press",          sets: 3, repsTarget: "12–15",   type: "Compound" },
+      { id: "ht",       name: "Hip Thrust",                sets: 4, repsTarget: "6-8",     type: "Compound" },
+      { id: "rdl",      name: "Romanian Deadlift",         sets: 3, repsTarget: "6-8",     type: "Compound" },
+      { id: "slp",      name: "Single-Leg Press",          sets: 3, repsTarget: "12-15",   type: "Compound" },
       { id: "calves",   name: "Calf Raises (Leg Press)",   sets: 3, repsTarget: "15",      type: "Isolation" },
       { id: "legext",   name: "Leg Extension",             sets: 3, repsTarget: "15",      type: "Isolation" },
     ]
@@ -54,8 +66,8 @@ const WORKOUTS = {
   U1: {
     label: "Upper A", day: "Tuesday", theme: "#6bc5ff", name: "Back & Shoulders (Width)",
     exercises: [
-      { id: "latpull",  name: "Single-Arm Lat Pulldown",   sets: 3, repsTarget: "10–12",   type: "Compound" },
-      { id: "dbrow",    name: "Single-Arm DB Rows",        sets: 3, repsTarget: "8–10",    type: "Compound" },
+      { id: "latpull",  name: "Single-Arm Lat Pulldown",   sets: 3, repsTarget: "10-12",   type: "Compound" },
+      { id: "dbrow",    name: "Single-Arm DB Rows",        sets: 3, repsTarget: "8-10",    type: "Compound" },
       { id: "lateraise",name: "Dumbbell Lateral Raises",   sets: 4, repsTarget: "15",      type: "Isolation" },
       { id: "hamcurl",  name: "DB Hammer Curls",           sets: 3, repsTarget: "12",      type: "Isolation" },
       { id: "tricep",   name: "Overhead Cable Tricep Ext", sets: 3, repsTarget: "12",      type: "Isolation" },
@@ -64,22 +76,84 @@ const WORKOUTS = {
   L2: {
     label: "Lower B", day: "Thursday", theme: "#ff6b6b", name: "3D Glute Sculpt",
     exercises: [
-      { id: "bss",      name: "Bulgarian Split Squat",     sets: 3, repsTarget: "8–10",    type: "Compound" },
-      { id: "abduc",    name: "Cable Abduction (45°)",     sets: 3, repsTarget: "12–15",   type: "Isolation" },
-      { id: "adduc",    name: "Adduction Machine",         sets: 3, repsTarget: "12–15",   type: "Isolation" },
-      { id: "legcurl",  name: "Leg Curl",                  sets: 3, repsTarget: "12–15",   type: "Isolation" },
+      { id: "bss",      name: "Bulgarian Split Squat",     sets: 3, repsTarget: "8-10",    type: "Compound" },
+      { id: "abduc",    name: "Cable Abduction (45deg)",   sets: 3, repsTarget: "12-15",   type: "Isolation" },
+      { id: "adduc",    name: "Adduction Machine",         sets: 3, repsTarget: "12-15",   type: "Isolation" },
+      { id: "legcurl",  name: "Leg Curl",                  sets: 3, repsTarget: "12-15",   type: "Isolation" },
       { id: "legraise", name: "Hanging Leg Raises",        sets: 3, repsTarget: "failure", type: "Core" },
     ]
   },
   U2: {
     label: "Upper B", day: "Friday", theme: "#aacf3f", name: "Shoulders & Back (Posture)",
     exercises: [
-      { id: "dbpress",  name: "Dumbbell Shoulder Press",   sets: 3, repsTarget: "8–10",    type: "Compound" },
-      { id: "widepull", name: "Wide Grip Lat Pulldown",    sets: 3, repsTarget: "10–12",   type: "Compound" },
+      { id: "dbpress",  name: "Dumbbell Shoulder Press",   sets: 3, repsTarget: "8-10",    type: "Compound" },
+      { id: "widepull", name: "Wide Grip Lat Pulldown",    sets: 3, repsTarget: "10-12",   type: "Compound" },
       { id: "facepull", name: "Face Pulls (Cables)",       sets: 3, repsTarget: "15",      type: "Isolation" },
       { id: "plank",    name: "Plank",                     sets: 3, repsTarget: "60 sec",  type: "Core" },
       { id: "deadbug",  name: "Dead Bugs",                 sets: 3, repsTarget: "12/side", type: "Core" },
     ]
+  }
+};
+
+const MACROS = {
+  train:  { cal: 1650, p: 120, c: 170, f: 55 },
+  sunday: { cal: 1900, p: 120, c: 230, f: 55 },
+  rest:   { cal: 1450, p: 120, c: 120, f: 55 },
+};
+
+const MEALS = {
+  train: {
+    label: "Training Day (8am)",
+    meals: [
+      { time: "7:15am", name: "Pre-gym snack", note: "Light, easy to digest", macros: "~150 cal | 5-25g P",
+        options: ["Banana + handful of almonds","Protein shake (whey + water or milk)","1 slice protein bread + PB","Glass of kefir"] },
+      { time: "9:30am", name: "Breakfast", note: "Post-workout, protein-heavy", macros: "~450 cal | 30g P",
+        options: ["2 eggs + bacon + protein bread","2-3 egg muffins (veggies + cheese)","Overnight oats + protein powder + banana + PB","Boiled eggs (3) + protein bread + cucumber","Protein bread + frischkase + chicken slices + paprika"] },
+      { time: "1:30pm", name: "Lunch", note: "Balanced, moderate carbs", macros: "~500 cal | 35g P",
+        options: ["Taze fasulye + bulgur","Airfryer chicken legs + rice + roasted veg","Garlic butter shrimp eintopf + bulgur","Lentil soup + protein bread","Rotisserie chicken + potatoes + salad","Tuna salad bowl","Chicken slices + bulgur + roasted zucchini"] },
+      { time: "4:30pm", name: "Snack", note: "Protein top-up", macros: "~200 cal | 20g P",
+        options: ["Protein shake (whey + milk)","Egg muffins (2 pieces)","Protein bread + hummus + cucumber","Protein bread + frischkase + chicken slices","Kefir + handful of nuts","Boiled egg + cheese spread on crackers"] },
+      { time: "7:30pm", name: "Dinner", note: "Lighter, protein + veg", macros: "~350 cal | 25g P",
+        options: ["Chickpea salad + feta","Baked salmon + sweet potato + spinach","Turkey meatballs + roasted zucchini + carrots","Rotisserie chicken + big salad","Tuna + white beans + onion + olive oil","Chicken + chickpea stew"] },
+      { time: "9:30pm", name: "Before bed", note: "Slow protein", macros: "~120 cal | 12g P",
+        options: ["Greek yogurt + honey","Cottage cheese + walnuts","Glass of kefir","Glass of whole milk"] },
+    ]
+  },
+  sunday: {
+    label: "Sunday (Long Session, 2-3h)",
+    meals: [
+      { time: "8:30am", name: "Breakfast (pre-gym)", note: "Bigger, 1-1.5h before", macros: "~450 cal | 30g P",
+        options: ["Overnight oats + protein powder + banana + PB","2 eggs + protein bread + fruit","Protein bread + frischkase + chicken slices + banana"] },
+      { time: "~11am", name: "During session", note: "If over 90 min", macros: "~80 cal",
+        options: ["Banana halfway through","Sports drink / electrolytes","Small handful of dried fruit"] },
+      { time: "12:30pm", name: "Post-workout lunch", note: "Biggest meal of the week", macros: "~650 cal | 45g P",
+        options: ["Shake + taze fasulye + rice (full portion)","Shake + rotisserie chicken + potatoes + salad","Shake + airfryer chicken + bulgur + roasted veg","Shake + doner/kebab plate + rice + salad"] },
+      { time: "4pm", name: "Snack", note: "Replenish", macros: "~250 cal | 15g P",
+        options: ["Protein bread + hummus + veggies","Egg muffins (2) + fruit","Kefir + handful of nuts","Protein bread + frischkase + cucumber"] },
+      { time: "7:30pm", name: "Dinner", note: "Normal-sized", macros: "~400 cal | 28g P",
+        options: ["Baked salmon + sweet potato + spinach","Chickpea salad + feta","Turkey meatballs + roasted zucchini","Shrimp tacos (airfryer shrimp, tortilla, slaw)"] },
+      { time: "9:30pm", name: "Before bed", note: "Slow protein", macros: "~120 cal | 12g P",
+        options: ["Greek yogurt + honey","Cottage cheese + walnuts","Glass of kefir"] },
+    ]
+  },
+  rest: {
+    label: "Rest Day",
+    meals: [
+      { time: "9am", name: "Breakfast", note: "Protein-forward, less carbs", macros: "~400 cal | 28g P",
+        options: ["2 eggs + bacon (skip bread)","2-3 egg muffins","Greek yogurt + nuts + berries","Boiled eggs (2) + cucumber + kefir","Protein bread + frischkase + chicken slices"] },
+      { time: "1pm", name: "Lunch", note: "Normal, moderate portions", macros: "~450 cal | 32g P",
+        options: ["Chickpea salad (veggies, chickpeas, dressing)","Protein bread + hummus + veggies on top","Leftover taze fasulye or chicken (skip rice)","Tuna salad bowl","Lentil soup","Rotisserie chicken + big salad"] },
+      { time: "4pm", name: "Snack", note: "Small, just to bridge", macros: "~150 cal | 12g P",
+        options: ["Handful of mixed nuts","1 egg muffin","Protein shake","Kefir","Boiled egg + cheese spread on crackers"] },
+      { time: "7:30pm", name: "Dinner", note: "Include omega-3 or slow protein", macros: "~350 cal | 28g P",
+        options: ["Baked salmon + roasted veg","Shrimp tacos (airfryer shrimp, tortilla, slaw)","Turkey meatballs + salad","Chicken + chickpea stew","Tuna + beans + onion + olive oil"] },
+      { time: "9:30pm", name: "Before bed", note: "Skip if dinner was late", macros: "~120 cal | 12g P",
+        options: ["Cottage cheese + walnuts","Greek yogurt","Glass of kefir","Skip"] },
+    ]
+  },
+  out: {
+    label: "Eating Out",
+    meals: []
   }
 };
 
@@ -91,27 +165,100 @@ const TYPE_COLORS = {
 
 const REST_SECONDS = { Compound: 180, Isolation: 90, Core: 45 };
 
+/* ═══════════════════════ HELPERS ═══════════════════════ */
+
 function getToday() { return new Date().toISOString().split("T")[0]; }
 function skey(date, day) { return "trk:" + date + "_" + day; }
+function getDayOfWeek(dateStr) { return new Date(dateStr + "T12:00:00").getDay(); }
 
 function lsGet(key) { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch(_) { return null; } }
 function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch(_) { return false; } }
 function lsDel(key) { try { localStorage.removeItem(key); } catch(_) {} }
 function lsList(prefix) { const keys = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(prefix)) keys.push(k); } } catch(_) {} return keys; }
 
+function getTodaySchedule(dateStr) {
+  const dow = getDayOfWeek(dateStr || getToday());
+  return SCHEDULE[dow];
+}
+
+/* ═══════════════════════ STYLES ═══════════════════════ */
+
+const mono = "'DM Mono', monospace";
+const heading = "'Bebas Neue', cursive";
+const card = { background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, overflow: "hidden" };
+const sectionPad = { padding: "14px 24px 0" };
+const labelStyle = { fontFamily: mono, fontSize: 9, letterSpacing: 2, color: "#666", textTransform: "uppercase" };
+
+/* ═══════════════════════ COMPONENTS ═══════════════════════ */
+
+function MacroBar({ macros, theme }) {
+  const items = [
+    { label: "CAL", value: macros.cal, unit: "" },
+    { label: "PROTEIN", value: macros.p, unit: "g" },
+    { label: "CARBS", value: macros.c, unit: "g" },
+    { label: "FAT", value: macros.f, unit: "g" },
+  ];
+  return (
+    <div style={{ display: "flex", gap: 8 }}>
+      {items.map((it, i) => (
+        <div key={i} style={{ flex: 1, background: i === 1 ? "rgba(200,241,53,0.08)" : "#111", border: "1px solid " + (i === 1 ? "rgba(200,241,53,0.2)" : "#1e1e1e"), borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
+          <div style={{ fontFamily: mono, fontSize: 7, letterSpacing: 2, color: i === 1 ? "#c8f135" : "#333", marginBottom: 2 }}>{it.label}</div>
+          <div style={{ fontFamily: heading, fontSize: 22, color: i === 1 ? "#c8f135" : "#f0f0f0", lineHeight: 1 }}>{it.value}<span style={{ fontSize: 12, color: "#777" }}>{it.unit}</span></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MealSlot({ meal }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ ...card, marginBottom: 8 }}>
+      <button onClick={() => setOpen(!open)} style={{ width: "100%", background: "transparent", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#f0f0f0", textAlign: "left" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <span style={{ fontFamily: mono, fontSize: 11, color: "#777", minWidth: 55 }}>{meal.time}</span>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 13 }}>{meal.name}</div>
+            <div style={{ fontSize: 10, color: "#777", marginTop: 1 }}>{meal.note}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontFamily: mono, fontSize: 9, color: "#666" }}>{meal.macros}</span>
+          <span style={{ color: "#666", fontSize: 12, transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>&#9660;</span>
+        </div>
+      </button>
+      {open && (
+        <div style={{ padding: "0 16px 12px 83px", display: "flex", flexDirection: "column", gap: 4 }}>
+          {meal.options.map((opt, i) => (
+            <div key={i} style={{ fontSize: 12, color: "#888", padding: "3px 0", display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <span style={{ width: 5, height: 5, borderRadius: "50%", border: "1.5px solid #333", marginTop: 5, flexShrink: 0 }}></span>
+              <span>{opt}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════ APP ═══════════════════════ */
+
 function App() {
-  const [activeDay, setActiveDay]     = useState("L1");
-  const [sessionDate, setSessionDate] = useState(getToday());
-  const [sessionData, setSessionData] = useState({});
-  const [history, setHistory]         = useState([]);
-  const [view, setView]               = useState("log");
-  const [saveState, setSaveState]     = useState("idle");
-  const [toast, setToast]             = useState(null);
-  const [timer, setTimer]             = useState(null);
-  const timerInterval                 = useRef(null);
-  const activeDayRef                  = useRef("L1");
-  const sessionDateRef                = useRef(getToday());
-  const sessionDataRef                = useRef({});
+  const [mainTab, setMainTab]           = useState("overview");
+  const [activeDay, setActiveDay]       = useState("L1");
+  const [sessionDate, setSessionDate]   = useState(getToday());
+  const [sessionData, setSessionData]   = useState({});
+  const [history, setHistory]           = useState([]);
+  const [workoutView, setWorkoutView]   = useState("log");
+  const [mealDayType, setMealDayType]   = useState("train");
+  const [schedOverride, setSchedOverride] = useState(null);
+  const [saveState, setSaveState]       = useState("idle");
+  const [toast, setToast]               = useState(null);
+  const [timer, setTimer]               = useState(null);
+  const timerInterval                   = useRef(null);
+  const activeDayRef                    = useRef("L1");
+  const sessionDateRef                  = useRef(getToday());
+  const sessionDataRef                  = useRef({});
 
   useEffect(() => { activeDayRef.current = activeDay; },    [activeDay]);
   useEffect(() => { sessionDateRef.current = sessionDate; },[sessionDate]);
@@ -124,12 +271,11 @@ function App() {
 
   const loadHistory = useCallback(() => {
     const cur = skey(sessionDate, activeDay);
-    const prefix = "trk:";
-    const allKeys = lsList(prefix);
+    const allKeys = lsList("trk:");
     const dayKeys = allKeys.filter(k => k.endsWith("_" + activeDay) && k !== cur);
     const entries = dayKeys.map(k => {
       const data = lsGet(k);
-      const date = k.replace(prefix, "").replace("_" + activeDay, "");
+      const date = k.replace("trk:", "").replace("_" + activeDay, "");
       return { date, exMap: data || {} };
     });
     setHistory(entries.sort((a, b) => b.date.localeCompare(a.date)));
@@ -168,10 +314,7 @@ function App() {
     showToast("Session cleared");
   };
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
-  };
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
   const startTimer = useCallback((exType) => {
     if (timerInterval.current) clearInterval(timerInterval.current);
@@ -196,25 +339,21 @@ function App() {
   }, []);
 
   const exportData = () => {
-    const prefix = "trk:";
-    const allKeys = lsList(prefix);
+    const allKeys = lsList("trk:");
     const dump = {};
     allKeys.forEach(k => { const v = lsGet(k); if (v) dump[k] = v; });
     if (Object.keys(dump).length === 0) { showToast("Nothing to export"); return; }
     const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "workouts-" + getToday() + ".json";
-    a.click();
+    a.href = url; a.download = "4split-" + getToday() + ".json"; a.click();
     URL.revokeObjectURL(url);
     showToast("Exported " + allKeys.length + " sessions");
   };
 
   const importData = () => {
     const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
+    input.type = "file"; input.accept = ".json";
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -224,18 +363,12 @@ function App() {
           const data = JSON.parse(ev.target.result);
           let count = 0;
           Object.entries(data).forEach(([k, v]) => {
-            if (k.startsWith("trk:") && typeof v === "object") {
-              lsSet(k, v);
-              count++;
-            }
+            if (k.startsWith("trk:") && typeof v === "object") { lsSet(k, v); count++; }
           });
           loadHistory();
-          const reloaded = lsGet(skey(sessionDate, activeDay));
-          setSessionData(reloaded || {});
+          setSessionData(lsGet(skey(sessionDate, activeDay)) || {});
           showToast("Imported " + count + " sessions");
-        } catch(_) {
-          showToast("Invalid file");
-        }
+        } catch(_) { showToast("Invalid file"); }
       };
       reader.readAsText(file);
     };
@@ -244,205 +377,392 @@ function App() {
 
   useEffect(() => { return () => { if (timerInterval.current) clearInterval(timerInterval.current); }; }, []);
 
-  const workout   = WORKOUTS[activeDay];
-  const prevSess  = history[0] || null;
-  const saveColor = saveState === "error" ? "#ff6b6b" : saveState === "saved" ? "#c8f135" : saveState === "saving" ? "#888" : "#2a2a2a";
-  const saveLabel = saveState === "error" ? "● fail" : saveState === "saved" ? "● saved" : saveState === "saving" ? "● saving" : "● ready";
+  const todaySched = schedOverride !== null ? SCHEDULE[schedOverride] : getTodaySchedule(sessionDate);
+  const isSwapped  = schedOverride !== null && schedOverride !== getDayOfWeek(sessionDate);
+  const workout    = WORKOUTS[activeDay];
+  const prevSess   = history[0] || null;
+
+  /* ═══════════════════ RENDER ═══════════════════ */
 
   return (
-    <div style={{ background: "#0a0a0a", minHeight: "100vh", paddingBottom: 100, paddingTop: "env(safe-area-inset-top)" }}>
+    <div style={{ background: "#0a0a0a", minHeight: "100vh", paddingBottom: 80, paddingTop: "env(safe-area-inset-top)" }}>
 
+      {/* Toast */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 40, left: "50%", transform: "translateX(-50%)", background: "#c8f135", color: "#000", padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 12, zIndex: 999, fontFamily: "'DM Mono', monospace", whiteSpace: "nowrap", animation: "slideUp 0.2s ease" }}>
+        <div style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", background: "#c8f135", color: "#000", padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 12, zIndex: 999, fontFamily: mono, whiteSpace: "nowrap", animation: "slideUp 0.2s ease" }}>
           {toast}
         </div>
       )}
 
-      <div style={{ padding: "40px 24px 20px", borderBottom: "1px solid #181818" }}>
-        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 4, color: "#c8f135", marginBottom: 8 }}>// WORKOUT TRACKER</div>
-        <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 56, lineHeight: 0.88, letterSpacing: 2, marginBottom: 16 }}>
-          4-DAY<br /><span style={{ color: "#c8f135" }}>PLAN</span>
+      {/* ═══════════════════ OVERVIEW TAB ═══════════════════ */}
+      {mainTab === "overview" && (
+        <div>
+          <div style={{ padding: "40px 24px 20px", borderBottom: "1px solid #181818" }}>
+            <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: 4, color: "#c8f135", marginBottom: 8 }}>// 4SPLIT</div>
+            <div style={{ fontFamily: heading, fontSize: 52, lineHeight: 0.88, letterSpacing: 2 }}>
+              TODAY
+            </div>
+            <div style={{ fontFamily: mono, fontSize: 11, color: "#777", marginTop: 8 }}>{sessionDate}</div>
+          </div>
+
+          <div style={{ ...sectionPad }}>
+            {/* Schedule strip */}
+            <div style={{ display: "flex", gap: 6, marginBottom: isSwapped ? 8 : 16 }}>
+              {SCHEDULE.map((s, i) => {
+                const isActive = schedOverride !== null ? i === schedOverride : i === getDayOfWeek(sessionDate);
+                const isActualToday = i === getDayOfWeek(sessionDate);
+                const color = s.type === "rest" ? "#666" : WORKOUTS[s.key]?.theme || "#555";
+                return (
+                  <button key={i} onClick={() => setSchedOverride(i === getDayOfWeek(sessionDate) ? null : i)} style={{ flex: 1, textAlign: "center", padding: "8px 0", borderRadius: 8, background: isActive ? "#1a1a1a" : "transparent", border: isActive ? "1px solid #333" : isActualToday && isSwapped ? "1px solid #1e1e1e" : "1px solid transparent", color: "#f0f0f0" }}>
+                    <div style={{ fontFamily: mono, fontSize: 9, letterSpacing: 1, color: isActive ? color : "#555", fontWeight: isActive ? 700 : 400 }}>{s.day}</div>
+                    <div style={{ fontSize: 8, color: isActive ? "#777" : "#444", marginTop: 2 }}>
+                      {s.key ? WORKOUTS[s.key].label.split(" ")[0][0] + WORKOUTS[s.key].label.split(" ")[1] : "Rest"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {isSwapped && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, padding: "6px 12px", background: "rgba(200,241,53,0.06)", border: "1px solid rgba(200,241,53,0.15)", borderRadius: 8 }}>
+                <span style={{ fontFamily: mono, fontSize: 10, color: "#c8f135", letterSpacing: 1 }}>SWAPPED TO {SCHEDULE[schedOverride].day.toUpperCase()}</span>
+                <button onClick={() => setSchedOverride(null)} style={{ fontFamily: mono, fontSize: 9, color: "#777", background: "transparent", letterSpacing: 1 }}>RESET</button>
+              </div>
+            )}
+
+            {/* Today's type badge */}
+            <div style={{ ...card, padding: "16px 18px", marginBottom: 12, borderTop: "3px solid " + (todaySched.key ? WORKOUTS[todaySched.key]?.theme : "#333") }}>
+              <div style={{ fontFamily: heading, fontSize: 24, letterSpacing: 1, color: todaySched.key ? WORKOUTS[todaySched.key].theme : "#555" }}>
+                {todaySched.key ? WORKOUTS[todaySched.key].name : "Rest Day"}
+              </div>
+              <div style={{ fontFamily: mono, fontSize: 10, color: "#666", marginTop: 4 }}>
+                {todaySched.type === "sunday" ? "Long session day (2-3h)" : todaySched.type === "train" ? "Training day" : "Recovery, same protein"}
+              </div>
+            </div>
+
+            {/* Macros */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>TODAY'S TARGETS</div>
+              <MacroBar macros={MACROS[todaySched.type]} />
+            </div>
+
+            {/* Quick meal suggestions */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>NEXT MEALS</div>
+              {(MEALS[todaySched.type]?.meals || MEALS.rest.meals).slice(0, 3).map((m, i) => (
+                <MealSlot key={i} meal={m} />
+              ))}
+              <button onClick={() => { setMainTab("nutrition"); setMealDayType(todaySched.type); }} style={{ width: "100%", background: "#111", border: "1px solid #1e1e1e", borderRadius: 8, padding: "10px", fontFamily: mono, fontSize: 10, letterSpacing: 2, color: "#777", marginTop: 4 }}>
+                VIEW FULL MEAL PLAN
+              </button>
+            </div>
+
+            {/* Quick workout link */}
+            {todaySched.key && (
+              <button onClick={() => { setMainTab("workout"); setActiveDay(todaySched.key); }} style={{ width: "100%", background: WORKOUTS[todaySched.key].theme, color: "#000", borderRadius: 10, padding: "14px", fontFamily: heading, fontSize: 20, letterSpacing: 2, marginBottom: 12 }}>
+                START {WORKOUTS[todaySched.key].name.toUpperCase()}
+              </button>
+            )}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <input type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)} style={{ width: 155 }} />
-          <div style={{ display: "flex", background: "#111", border: "1px solid #1e1e1e", borderRadius: 8, overflow: "hidden" }}>
-            {["log","history"].map(v => (
-              <button key={v} onClick={() => setView(v)} style={{ padding: "8px 16px", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", background: view === v ? "#222" : "transparent", color: view === v ? "#f0f0f0" : "#444" }}>
-                {v}
+      )}
+
+      {/* ═══════════════════ NUTRITION TAB ═══════════════════ */}
+      {mainTab === "nutrition" && (
+        <div>
+          <div style={{ padding: "40px 24px 20px", borderBottom: "1px solid #181818" }}>
+            <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: 4, color: "#c8f135", marginBottom: 8 }}>// 4SPLIT</div>
+            <div style={{ fontFamily: heading, fontSize: 52, lineHeight: 0.88, letterSpacing: 2 }}>
+              MEAL<br /><span style={{ color: "#c8f135" }}>PLAN</span>
+            </div>
+          </div>
+
+          {/* Day type picker */}
+          <div style={{ display: "flex", gap: 6, padding: "16px 24px 0", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            {[
+              { key: "train", label: "Training", color: "#c8f135" },
+              { key: "sunday", label: "Sunday", color: "#ff6b6b" },
+              { key: "rest", label: "Rest", color: "#6bc5ff" },
+              { key: "out", label: "Eating Out", color: "#aacf3f" },
+            ].map(t => (
+              <button key={t.key} onClick={() => setMealDayType(t.key)} style={{ background: mealDayType === t.key ? t.color : "#111", color: mealDayType === t.key ? "#000" : "#555", border: "1px solid " + (mealDayType === t.key ? t.color : "#1e1e1e"), borderRadius: 10, padding: "10px 16px", fontWeight: 700, fontSize: 12, whiteSpace: "nowrap", flexShrink: 0, boxShadow: mealDayType === t.key ? "0 0 20px " + t.color + "44" : "none" }}>
+                {t.label}
               </button>
             ))}
           </div>
-          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1, color: saveColor, animation: saveState === "saving" ? "blink 0.8s infinite" : "none" }}>
-            {saveLabel}
-          </span>
-        </div>
-      </div>
 
-      <div style={{ display: "flex", gap: 10, padding: "18px 24px 0", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        {Object.entries(WORKOUTS).map(([key, w]) => (
-          <button key={key} onClick={() => switchDay(key)} style={{ background: activeDay === key ? w.theme : "#111", color: activeDay === key ? "#000" : "#555", border: "1px solid " + (activeDay === key ? w.theme : "#1e1e1e"), borderRadius: 10, padding: "10px 18px", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", boxShadow: activeDay === key ? "0 0 20px " + w.theme + "44" : "none", flexShrink: 0 }}>
-            {w.label} <span style={{ fontWeight: 300, opacity: 0.65, fontSize: 11, marginLeft: 4 }}>· {w.day}</span>
-          </button>
-        ))}
-      </div>
+          <div style={{ ...sectionPad }}>
+            {/* Macro targets */}
+            {mealDayType !== "out" && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ ...labelStyle, marginBottom: 8 }}>DAILY TARGETS</div>
+                <MacroBar macros={MACROS[mealDayType]} />
+              </div>
+            )}
 
-      <div style={{ padding: "14px 24px 0" }}>
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderTop: "3px solid " + workout.theme, borderRadius: 12, padding: "15px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 20, color: workout.theme, letterSpacing: 1 }}>{workout.name}</div>
-            <div style={{ fontSize: 11, color: "#333", marginTop: 2 }}>{sessionDate} · {workout.exercises.length} exercises</div>
-          </div>
-          <button onClick={clearSession} style={{ background: "transparent", border: "1px solid #252525", color: "#444", borderRadius: 6, padding: "6px 14px", fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1 }}>
-            CLEAR
-          </button>
-        </div>
-      </div>
-
-      {view === "log" && (
-        <div style={{ padding: "14px 24px 0", display: "flex", flexDirection: "column", gap: 12 }}>
-          {workout.exercises.map((ex, ei) => {
-            const tc      = TYPE_COLORS[ex.type];
-            const sets    = sessionData[ex.id] || [];
-            const prevS   = prevSess?.exMap?.[ex.id] || [];
-            const prevW   = prevS.map(s => parseFloat(s.weight)).filter(Boolean);
-            const maxPrev = prevW.length ? Math.max(...prevW) : null;
-            const currW   = sets.map(s => parseFloat(s.weight)).filter(Boolean);
-            const maxCurr = currW.length ? Math.max(...currW) : null;
-            const diff    = maxCurr !== null && maxPrev !== null ? +(maxCurr - maxPrev).toFixed(1) : null;
-
-            return (
-              <div key={ex.id} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, overflow: "hidden" }}>
-                <div style={{ padding: "13px 18px", borderBottom: "1px solid #161616", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#252525" }}>{String(ei + 1).padStart(2, "0")}</span>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>{ex.name}</div>
-                      <div style={{ fontSize: 11, color: "#3a3a3a", marginTop: 2 }}>Target: {ex.sets} × {ex.repsTarget}</div>
-                    </div>
+            {/* Meals or eating out tips */}
+            {mealDayType !== "out" ? (
+              <div>
+                {MEALS[mealDayType].meals.map((m, i) => (
+                  <MealSlot key={i} meal={m} />
+                ))}
+              </div>
+            ) : (
+              <div>
+                <div style={{ ...card, padding: "16px 18px", marginBottom: 12 }}>
+                  <div style={{ fontFamily: mono, fontSize: 9, letterSpacing: 2, color: "#aacf3f", marginBottom: 8 }}>RULE</div>
+                  <div style={{ fontSize: 13, color: "#888", lineHeight: 1.6 }}>
+                    One meal out doesn't matter if the other 20 meals that week were solid. Don't compensate by starving. Just make surrounding meals leaner and protein-focused.
                   </div>
-                  <span style={{ background: tc.bg, color: tc.color, border: "1px solid " + tc.border, borderRadius: 4, padding: "2px 8px", fontSize: 9, fontFamily: "'DM Mono', monospace", letterSpacing: 1, flexShrink: 0 }}>
-                    {ex.type}
-                  </span>
                 </div>
 
-                <div style={{ padding: "10px 18px 14px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, marginBottom: 4 }}>
-                    {["SET","KG","REPS","NOTE",""].map((h, i) => (
-                      <div key={i} style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: "#252525", letterSpacing: 2 }}>{h}</div>
-                    ))}
+                <div style={{ ...labelStyle, marginBottom: 8, marginTop: 16 }}>IF DINNER IS OUT</div>
+                {[
+                  { meal: "Breakfast", tip: "Keep normal, protein-focused" },
+                  { meal: "Lunch", tip: "Go lighter: chickpea salad, tuna bowl, egg muffins" },
+                  { meal: "Snack", tip: "Skip or just kefir / nuts" },
+                  { meal: "Dinner out", tip: "Anchor with grilled protein + veg. Enjoy the rest." },
+                  { meal: "Before bed", tip: "Skip. Dinner covered it." },
+                ].map((r, i) => (
+                  <div key={i} style={{ ...card, padding: "10px 16px", marginBottom: 6, display: "flex", gap: 12, alignItems: "baseline" }}>
+                    <span style={{ fontWeight: 600, fontSize: 12, minWidth: 80, color: "#888" }}>{r.meal}</span>
+                    <span style={{ fontSize: 12, color: "#555" }}>{r.tip}</span>
                   </div>
+                ))}
 
-                  {Array.from({ length: ex.sets }).map((_, si) => {
-                    const s      = sets[si] || {};
-                    const filled = s.weight || s.reps;
-                    return (
-                      <div key={si} style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, marginBottom: 5, alignItems: "center" }}>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: filled ? workout.theme : "#252525", fontWeight: filled ? 700 : 400 }}>
-                          {si + 1}
+                <div style={{ ...labelStyle, marginBottom: 8, marginTop: 16 }}>IF LUNCH IS OUT</div>
+                {[
+                  { meal: "Breakfast", tip: "Normal, protein-heavy" },
+                  { meal: "Lunch out", tip: "Protein + veg as anchor. Order what looks good." },
+                  { meal: "Snack", tip: "Probably skip" },
+                  { meal: "Dinner", tip: "Go light: yogurt + nuts, boiled eggs, kefir" },
+                ].map((r, i) => (
+                  <div key={i} style={{ ...card, padding: "10px 16px", marginBottom: 6, display: "flex", gap: 12, alignItems: "baseline" }}>
+                    <span style={{ fontWeight: 600, fontSize: 12, minWidth: 80, color: "#888" }}>{r.meal}</span>
+                    <span style={{ fontSize: 12, color: "#555" }}>{r.tip}</span>
+                  </div>
+                ))}
+
+                <div style={{ ...labelStyle, marginBottom: 8, marginTop: 16 }}>ORDERING CHEAT SHEET</div>
+                {[
+                  { bad: "Creamy pasta as main", good: "Grilled protein + side of pasta" },
+                  { bad: "Fried app + fried main", good: "Pick one fried, other grilled" },
+                  { bad: "Skipping protein to save room", good: "Always anchor with protein" },
+                  { bad: "All rice-heavy sushi rolls", good: "Sashimi + edamame + 1-2 rolls" },
+                  { bad: "Doner with fries + sauces", good: "Doner plate with salad, light sauce" },
+                ].map((r, i) => (
+                  <div key={i} style={{ ...card, padding: "10px 16px", marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: "#555", textDecoration: "line-through", marginBottom: 3 }}>{r.bad}</div>
+                    <div style={{ fontSize: 12, color: "#aacf3f" }}>{r.good}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Protein shake tip */}
+            {mealDayType !== "out" && (
+              <div style={{ ...card, padding: "14px 16px", marginTop: 12, borderLeft: "3px solid #c8f135" }}>
+                <div style={{ fontFamily: mono, fontSize: 9, letterSpacing: 2, color: "#c8f135", marginBottom: 4 }}>PROTEIN SHAKE SHORTCUT</div>
+                <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6 }}>
+                  1 scoop whey = ~25g protein, ~120 cal. Use cow milk (+8g P), not oat milk (1g P). 1-2 shakes/day locks in 25-50g protein so meals can be simpler.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════ WORKOUT TAB ═══════════════════ */}
+      {mainTab === "workout" && (
+        <div>
+          <div style={{ padding: "40px 24px 20px", borderBottom: "1px solid #181818" }}>
+            <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: 4, color: "#c8f135", marginBottom: 8 }}>// 4SPLIT</div>
+            <div style={{ fontFamily: heading, fontSize: 52, lineHeight: 0.88, letterSpacing: 2, marginBottom: 16 }}>
+              WORK<br /><span style={{ color: "#c8f135" }}>OUT</span>
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <input type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)} style={{ width: 155 }} />
+              <div style={{ display: "flex", background: "#111", border: "1px solid #1e1e1e", borderRadius: 8, overflow: "hidden" }}>
+                {["log","history"].map(v => (
+                  <button key={v} onClick={() => setWorkoutView(v)} style={{ padding: "8px 16px", fontFamily: mono, fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", background: workoutView === v ? "#222" : "transparent", color: workoutView === v ? "#f0f0f0" : "#444" }}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+              <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: 1, color: saveState === "error" ? "#ff6b6b" : saveState === "saved" ? "#c8f135" : saveState === "saving" ? "#888" : "#2a2a2a", animation: saveState === "saving" ? "blink 0.8s infinite" : "none" }}>
+                {saveState === "error" ? "* fail" : saveState === "saved" ? "* saved" : saveState === "saving" ? "* saving" : "* ready"}
+              </span>
+            </div>
+          </div>
+
+          {/* Day tabs */}
+          <div style={{ display: "flex", gap: 10, padding: "18px 24px 0", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            {Object.entries(WORKOUTS).map(([key, w]) => (
+              <button key={key} onClick={() => switchDay(key)} style={{ background: activeDay === key ? w.theme : "#111", color: activeDay === key ? "#000" : "#555", border: "1px solid " + (activeDay === key ? w.theme : "#1e1e1e"), borderRadius: 10, padding: "10px 18px", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", boxShadow: activeDay === key ? "0 0 20px " + w.theme + "44" : "none", flexShrink: 0 }}>
+                {w.label} <span style={{ fontWeight: 300, opacity: 0.65, fontSize: 11, marginLeft: 4 }}>* {w.day}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Session bar */}
+          <div style={{ padding: "14px 24px 0" }}>
+            <div style={{ ...card, borderTop: "3px solid " + workout.theme, padding: "15px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontFamily: heading, fontSize: 20, color: workout.theme, letterSpacing: 1 }}>{workout.name}</div>
+                <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{sessionDate} * {workout.exercises.length} exercises</div>
+              </div>
+              <button onClick={clearSession} style={{ background: "transparent", border: "1px solid #333", color: "#777", borderRadius: 6, padding: "6px 14px", fontFamily: mono, fontSize: 10, letterSpacing: 1 }}>
+                CLEAR
+              </button>
+            </div>
+          </div>
+
+          {/* Log view */}
+          {workoutView === "log" && (
+            <div style={{ padding: "14px 24px 0", display: "flex", flexDirection: "column", gap: 12 }}>
+              {workout.exercises.map((ex, ei) => {
+                const tc      = TYPE_COLORS[ex.type];
+                const sets    = sessionData[ex.id] || [];
+                const prevS   = prevSess?.exMap?.[ex.id] || [];
+                const prevW   = prevS.map(s => parseFloat(s.weight)).filter(Boolean);
+                const maxPrev = prevW.length ? Math.max(...prevW) : null;
+                const currW   = sets.map(s => parseFloat(s.weight)).filter(Boolean);
+                const maxCurr = currW.length ? Math.max(...currW) : null;
+                const diff    = maxCurr !== null && maxPrev !== null ? +(maxCurr - maxPrev).toFixed(1) : null;
+
+                return (
+                  <div key={ex.id} style={card}>
+                    <div style={{ padding: "13px 18px", borderBottom: "1px solid #161616", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                        <span style={{ fontFamily: mono, fontSize: 10, color: "#555" }}>{String(ei + 1).padStart(2, "0")}</span>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.2 }}>{ex.name}</div>
+                          <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>Target: {ex.sets} x {ex.repsTarget}</div>
                         </div>
-                        <input type="number" placeholder="—" value={s.weight || ""} min="0" step="0.5" onChange={e => updateSet(ex.id, si, "weight", e.target.value)} />
-                        <input type="text" placeholder={ex.repsTarget} value={s.reps || ""} onChange={e => updateSet(ex.id, si, "reps", e.target.value)} />
-                        <input type="text" placeholder="note" value={s.note || ""} onChange={e => updateSet(ex.id, si, "note", e.target.value)} />
-                        <button onClick={() => startTimer(ex.type)} style={{ background: filled ? tc.bg : "#111", border: "1px solid " + (filled ? tc.border : "#1e1e1e"), color: filled ? tc.color : "#2a2a2a", borderRadius: 6, padding: "7px 0", fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: 0.5, width: "100%" }}>
-                          REST
-                        </button>
                       </div>
-                    );
-                  })}
+                      <span style={{ background: tc.bg, color: tc.color, border: "1px solid " + tc.border, borderRadius: 4, padding: "2px 8px", fontSize: 9, fontFamily: mono, letterSpacing: 1, flexShrink: 0 }}>
+                        {ex.type}
+                      </span>
+                    </div>
 
-                  {maxPrev !== null && (
-                    <div style={{ marginTop: 8, padding: "6px 10px", background: "#0d0d0d", borderRadius: 6, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#252525", letterSpacing: 1 }}>PREV {prevSess.date}</span>
-                      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#444" }}>max {maxPrev}kg</span>
-                      {diff !== null && (
-                        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, fontWeight: 700, color: diff > 0 ? "#c8f135" : diff < 0 ? "#ff6b6b" : "#444" }}>
-                          {diff > 0 ? "▲ +" + diff : diff < 0 ? "▼ " + diff : "→ same"}
-                        </span>
+                    <div style={{ padding: "10px 18px 14px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, marginBottom: 4 }}>
+                        {["SET","KG","REPS","NOTE",""].map((h, i) => (
+                          <div key={i} style={{ fontFamily: mono, fontSize: 8, color: "#555", letterSpacing: 2 }}>{h}</div>
+                        ))}
+                      </div>
+
+                      {Array.from({ length: ex.sets }).map((_, si) => {
+                        const s      = sets[si] || {};
+                        const filled = s.weight || s.reps;
+                        return (
+                          <div key={si} style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, marginBottom: 5, alignItems: "center" }}>
+                            <div style={{ fontFamily: mono, fontSize: 13, color: filled ? workout.theme : "#252525", fontWeight: filled ? 700 : 400 }}>
+                              {si + 1}
+                            </div>
+                            <input type="number" placeholder="--" value={s.weight || ""} min="0" step="0.5" onChange={e => updateSet(ex.id, si, "weight", e.target.value)} />
+                            <input type="text" placeholder={ex.repsTarget} value={s.reps || ""} onChange={e => updateSet(ex.id, si, "reps", e.target.value)} />
+                            <input type="text" placeholder="note" value={s.note || ""} onChange={e => updateSet(ex.id, si, "note", e.target.value)} />
+                            <button onClick={() => startTimer(ex.type)} style={{ background: filled ? tc.bg : "#111", border: "1px solid " + (filled ? tc.border : "#1e1e1e"), color: filled ? tc.color : "#2a2a2a", borderRadius: 6, padding: "7px 0", fontFamily: mono, fontSize: 9, letterSpacing: 0.5, width: "100%" }}>
+                              REST
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {maxPrev !== null && (
+                        <div style={{ marginTop: 8, padding: "6px 10px", background: "#0d0d0d", borderRadius: 6, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: mono, fontSize: 9, color: "#555", letterSpacing: 1 }}>PREV {prevSess.date}</span>
+                          <span style={{ fontFamily: mono, fontSize: 11, color: "#777" }}>max {maxPrev}kg</span>
+                          {diff !== null && (
+                            <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: diff > 0 ? "#c8f135" : diff < 0 ? "#ff6b6b" : "#444" }}>
+                              {diff > 0 ? "^ +" + diff : diff < 0 ? "v " + diff : "= same"}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {(() => {
-            const logged = workout.exercises.reduce((n, ex) => n + (sessionData[ex.id] || []).filter(s => s.weight || s.reps).length, 0);
-            const total  = workout.exercises.reduce((n, ex) => n + ex.sets, 0);
-            const pct    = Math.min(100, Math.round((logged / total) * 100));
-            return (
-              <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, padding: "16px 20px", display: "flex", gap: 16, alignItems: "center" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: "#2a2a2a", letterSpacing: 2, marginBottom: 6 }}>SESSION PROGRESS</div>
-                  <div style={{ height: 4, background: "#1a1a1a", borderRadius: 2 }}>
-                    <div style={{ height: "100%", width: pct + "%", background: workout.theme, borderRadius: 2, transition: "width 0.4s ease" }} />
                   </div>
-                </div>
-                <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 36, color: workout.theme, lineHeight: 1 }}>
-                  {logged}<span style={{ color: "#222", fontSize: 20 }}>/{total}</span>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
+                );
+              })}
 
-      {view === "history" && (
-        <div style={{ padding: "18px 24px 0" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 26, color: workout.theme, letterSpacing: 1 }}>
-              {workout.label} · Past Sessions
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={exportData} style={{ background: "#111", border: "1px solid #252525", color: "#888", borderRadius: 6, padding: "6px 12px", fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1 }}>
-                EXPORT
-              </button>
-              <button onClick={importData} style={{ background: "#111", border: "1px solid #252525", color: "#888", borderRadius: 6, padding: "6px 12px", fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 1 }}>
-                IMPORT
-              </button>
-            </div>
-          </div>
-          {history.length === 0 ? (
-            <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, padding: 40, textAlign: "center", fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#2a2a2a" }}>
-              No past sessions yet.
-            </div>
-          ) : history.map(({ date, exMap }) => {
-            const filled = workout.exercises.filter(ex => exMap[ex.id]?.some(s => s.weight || s.reps));
-            if (!filled.length) return null;
-            return (
-              <div key={date} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: 12, marginBottom: 12, overflow: "hidden" }}>
-                <div style={{ padding: "12px 18px", borderBottom: "1px solid #161616", background: "#0d0d0d", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, color: workout.theme }}>{date}</span>
-                  <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#2a2a2a" }}>{filled.length} ex</span>
-                </div>
-                <div style={{ padding: "12px 18px" }}>
-                  {filled.map(ex => {
-                    const sets = (exMap[ex.id] || []).filter(s => s.weight || s.reps);
-                    return (
-                      <div key={ex.id} style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "#bbb", marginBottom: 5 }}>{ex.name}</div>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {sets.map((s, i) => (
-                            <span key={i} style={{ background: "#181818", border: "1px solid #202020", borderRadius: 6, padding: "4px 10px", fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#777" }}>
-                              {s.weight ? s.weight + "kg" : "—"} × {s.reps || "—"}
-                            </span>
-                          ))}
-                        </div>
+              {/* Progress bar */}
+              {(() => {
+                const logged = workout.exercises.reduce((n, ex) => n + (sessionData[ex.id] || []).filter(s => s.weight || s.reps).length, 0);
+                const total  = workout.exercises.reduce((n, ex) => n + ex.sets, 0);
+                const pct    = Math.min(100, Math.round((logged / total) * 100));
+                return (
+                  <div style={{ ...card, padding: "16px 20px", display: "flex", gap: 16, alignItems: "center" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: mono, fontSize: 8, color: "#555", letterSpacing: 2, marginBottom: 6 }}>SESSION PROGRESS</div>
+                      <div style={{ height: 4, background: "#1a1a1a", borderRadius: 2 }}>
+                        <div style={{ height: "100%", width: pct + "%", background: workout.theme, borderRadius: 2, transition: "width 0.4s ease" }} />
                       </div>
-                    );
-                  })}
+                    </div>
+                    <div style={{ fontFamily: heading, fontSize: 36, color: workout.theme, lineHeight: 1 }}>
+                      {logged}<span style={{ color: "#555", fontSize: 20 }}>/{total}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* History view */}
+          {workoutView === "history" && (
+            <div style={{ padding: "18px 24px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ fontFamily: heading, fontSize: 26, color: workout.theme, letterSpacing: 1 }}>
+                  {workout.label} * Past Sessions
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={exportData} style={{ background: "#111", border: "1px solid #252525", color: "#888", borderRadius: 6, padding: "6px 12px", fontFamily: mono, fontSize: 10, letterSpacing: 1 }}>EXPORT</button>
+                  <button onClick={importData} style={{ background: "#111", border: "1px solid #252525", color: "#888", borderRadius: 6, padding: "6px 12px", fontFamily: mono, fontSize: 10, letterSpacing: 1 }}>IMPORT</button>
                 </div>
               </div>
-            );
-          })}
+              {history.length === 0 ? (
+                <div style={{ ...card, padding: 40, textAlign: "center", fontFamily: mono, fontSize: 12, color: "#555" }}>
+                  No past sessions yet.
+                </div>
+              ) : history.map(({ date, exMap }) => {
+                const filled = workout.exercises.filter(ex => exMap[ex.id]?.some(s => s.weight || s.reps));
+                if (!filled.length) return null;
+                return (
+                  <div key={date} style={{ ...card, marginBottom: 12 }}>
+                    <div style={{ padding: "12px 18px", borderBottom: "1px solid #161616", background: "#0d0d0d", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontFamily: mono, fontSize: 13, color: workout.theme }}>{date}</span>
+                      <span style={{ fontFamily: mono, fontSize: 10, color: "#555" }}>{filled.length} ex</span>
+                    </div>
+                    <div style={{ padding: "12px 18px" }}>
+                      {filled.map(ex => {
+                        const sets = (exMap[ex.id] || []).filter(s => s.weight || s.reps);
+                        return (
+                          <div key={ex.id} style={{ marginBottom: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: "#bbb", marginBottom: 5 }}>{ex.name}</div>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                              {sets.map((s, i) => (
+                                <span key={i} style={{ background: "#181818", border: "1px solid #202020", borderRadius: 6, padding: "4px 10px", fontFamily: mono, fontSize: 11, color: "#777" }}>
+                                  {s.weight ? s.weight + "kg" : "--"} x {s.reps || "--"}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
+      {/* ═══════════════════ REST TIMER MODAL ═══════════════════ */}
       {timer !== null && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 24, padding: "40px 48px", display: "flex", flexDirection: "column", alignItems: "center", gap: 20, minWidth: 260 }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: 4, color: "#444", textTransform: "uppercase" }}>
-              {timer.remaining === 0 ? "Go again!" : "Rest · " + timer.exType}
+            <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: 4, color: "#777", textTransform: "uppercase" }}>
+              {timer.remaining === 0 ? "Go again!" : "Rest * " + timer.exType}
             </div>
             {(() => {
               const done  = timer.remaining === 0;
@@ -461,11 +781,11 @@ function App() {
                     <circle cx="65" cy="65" r={r} fill="none" stroke={col} strokeWidth="6" strokeLinecap="round" strokeDasharray={dash + " " + circ} style={{ transition: "stroke-dasharray 0.95s linear" }} />
                   </svg>
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: done ? 36 : 46, color: done ? "#c8f135" : "#fff", lineHeight: 1, letterSpacing: 1 }}>
+                    <div style={{ fontFamily: heading, fontSize: done ? 36 : 46, color: done ? "#c8f135" : "#fff", lineHeight: 1, letterSpacing: 1 }}>
                       {done ? "GO" : label}
                     </div>
                     {!done && (
-                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#333", marginTop: 2 }}>
+                      <div style={{ fontFamily: mono, fontSize: 9, color: "#666", marginTop: 2 }}>
                         {"/ " + (timer.total >= 60 ? Math.floor(timer.total/60) + ":" + String(timer.total%60).padStart(2,"0") : timer.total + "s")}
                       </div>
                     )}
@@ -473,12 +793,26 @@ function App() {
                 </div>
               );
             })()}
-            <button onClick={dismissTimer} style={{ background: timer.remaining === 0 ? "#c8f135" : "#1a1a1a", color: timer.remaining === 0 ? "#000" : "#666", border: "1px solid " + (timer.remaining === 0 ? "#c8f135" : "#2a2a2a"), borderRadius: 10, padding: "12px 32px", fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: 2, fontWeight: timer.remaining === 0 ? 700 : 400 }}>
+            <button onClick={dismissTimer} style={{ background: timer.remaining === 0 ? "#c8f135" : "#1a1a1a", color: timer.remaining === 0 ? "#000" : "#666", border: "1px solid " + (timer.remaining === 0 ? "#c8f135" : "#2a2a2a"), borderRadius: 10, padding: "12px 32px", fontFamily: mono, fontSize: 12, letterSpacing: 2, fontWeight: timer.remaining === 0 ? 700 : 400 }}>
               {timer.remaining === 0 ? "START SET" : "SKIP"}
             </button>
           </div>
         </div>
       )}
+
+      {/* ═══════════════════ BOTTOM NAV ═══════════════════ */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#0a0a0a", borderTop: "1px solid #1a1a1a", display: "flex", paddingBottom: "env(safe-area-inset-bottom)", zIndex: 100 }}>
+        {[
+          { key: "overview",  label: "Today",    icon: "O" },
+          { key: "nutrition", label: "Nutrition", icon: "N" },
+          { key: "workout",   label: "Workout",  icon: "W" },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setMainTab(tab.key)} style={{ flex: 1, padding: "10px 0 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "transparent", color: mainTab === tab.key ? "#c8f135" : "#333" }}>
+            <div style={{ fontFamily: heading, fontSize: 22, lineHeight: 1 }}>{tab.icon}</div>
+            <div style={{ fontFamily: mono, fontSize: 8, letterSpacing: 1.5 }}>{tab.label}</div>
+          </button>
+        ))}
+      </div>
 
     </div>
   );
