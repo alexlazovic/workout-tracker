@@ -1,14 +1,14 @@
 {
   "name": "4SPLIT",
-  "short_name": "4-Day Trainer",
-  "description": "Lower + Upper body progressive overload tracker with rest timer",
+  "short_name": "4SPLIT",
+  "description": "4-day workout tracker + meal plan",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "orientation": "portrait",
   "icons": [
-    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%230a0a0a' width='192' height='192' rx='50'/><text x='96' y='100' font-size='100' font-weight='900' fill='%23c8f135' text-anchor='middle' dominant-baseline='middle' font-family='Arial'>4D</text></svg>", "sizes": "192x192", "type": "image/svg+xml" },
-    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0a0a' width='512' height='512' rx='120'/><text x='256' y='270' font-size='280' font-weight='900' fill='%23c8f135' text-anchor='middle' dominant-baseline='middle' font-family='Arial'>4D</text></svg>", "sizes": "512x512", "type": "image/svg+xml" }
+    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%230a0a0a' width='192' height='192' rx='50'/><text x='96' y='100' font-size='80' font-weight='900' fill='%23c8f135' text-anchor='middle' dominant-baseline='middle' font-family='Arial'>4S</text></svg>", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0a0a' width='512' height='512' rx='120'/><text x='256' y='270' font-size='220' font-weight='900' fill='%23c8f135' text-anchor='middle' dominant-baseline='middle' font-family='Arial'>4S</text></svg>", "sizes": "512x512", "type": "image/svg+xml" }
   ]
 }

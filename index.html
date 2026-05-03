@@ -97,9 +97,9 @@ const WARMUPS = {
 
 const SUPERSETS = {
   L1: [["slp", "calves"]],
-  U1: [["hamcurl", "tricep"]],
-  L2: [["abduc", "adduc"]],
-  U2: [["plank", "deadbug"]],
+  U1: [["hamcurl", "tricep"], ["cablecrunch", "legraise2", "plank2"]],
+  L2: [["abduc", "kickback"], ["cablecrunch", "legraise", "plank3"]],
+  U2: [["cablecrunch4", "legraise4", "plank"]],
 };
 
 function getSupersetGroup(workoutKey, exId) {
@@ -111,8 +111,9 @@ function getSupersetGroup(workoutKey, exId) {
 }
 
 const SUPERSET_COLORS = [
-  { bg: "rgba(255,200,50,0.08)", border: "rgba(255,200,50,0.25)", color: "#ffc832", label: "SUPERSET" },
-  { bg: "rgba(200,100,255,0.08)", border: "rgba(200,100,255,0.25)", color: "#c864ff", label: "SUPERSET" },
+  { bg: "rgba(255,200,50,0.08)", border: "rgba(255,200,50,0.25)", color: "#ffc832" },
+  { bg: "rgba(200,100,255,0.08)", border: "rgba(200,100,255,0.25)", color: "#c864ff" },
+  { bg: "rgba(100,220,200,0.08)", border: "rgba(100,220,200,0.25)", color: "#64dcc8" },
 ];
 
 const WORKOUTS = {
@@ -124,6 +125,7 @@ const WORKOUTS = {
       { id: "slp",      name: "Single-Leg Press",          sets: 3, repsTarget: "12-15",   type: "Compound" },
       { id: "calves",   name: "Calf Raises (Leg Press)",   sets: 3, repsTarget: "15",      type: "Isolation" },
       { id: "legext",   name: "Leg Extension",             sets: 3, repsTarget: "15",      type: "Isolation" },
+      { id: "hipabduc", name: "Hip Abduction Machine (lean fwd)", sets: 3, repsTarget: "15", type: "Isolation" },
     ]
   },
   U1: {
@@ -134,16 +136,22 @@ const WORKOUTS = {
       { id: "lateraise",name: "Dumbbell Lateral Raises",   sets: 4, repsTarget: "15",      type: "Isolation" },
       { id: "hamcurl",  name: "DB Hammer Curls",           sets: 3, repsTarget: "12",      type: "Isolation" },
       { id: "tricep",   name: "Overhead Cable Tricep Ext", sets: 3, repsTarget: "12",      type: "Isolation" },
+      { id: "cablecrunch", name: "Cable Ab Crunches",      sets: 3, repsTarget: "15",      type: "Core" },
+      { id: "legraise2",   name: "Hanging Leg Raises",     sets: 3, repsTarget: "failure", type: "Core" },
+      { id: "plank2",      name: "Plank",                  sets: 3, repsTarget: "60 sec",  type: "Core" },
     ]
   },
   L2: {
     label: "Lower B", day: "Thursday", theme: "#ff6b6b", name: "3D Glute Sculpt",
     exercises: [
-      { id: "bss",      name: "Bulgarian Split Squat",     sets: 3, repsTarget: "8-10",    type: "Compound" },
-      { id: "abduc",    name: "Cable Abduction (45deg)",   sets: 3, repsTarget: "12-15",   type: "Isolation" },
-      { id: "adduc",    name: "Adduction Machine",         sets: 3, repsTarget: "12-15",   type: "Isolation" },
-      { id: "legcurl",  name: "Leg Curl",                  sets: 3, repsTarget: "12-15",   type: "Isolation" },
-      { id: "legraise", name: "Hanging Leg Raises",        sets: 3, repsTarget: "failure", type: "Core" },
+      { id: "bss",         name: "Bulgarian Split Squat",     sets: 3, repsTarget: "8-10",    type: "Compound" },
+      { id: "abduc",       name: "Cable Abduction (45deg)",   sets: 3, repsTarget: "12-15",   type: "Isolation" },
+      { id: "kickback",    name: "Cable Kickbacks",           sets: 3, repsTarget: "12-15",   type: "Isolation" },
+      { id: "adduc",       name: "Adduction Machine",         sets: 3, repsTarget: "12-15",   type: "Isolation" },
+      { id: "legcurl",     name: "Leg Curl",                  sets: 3, repsTarget: "12-15",   type: "Isolation" },
+      { id: "cablecrunch", name: "Cable Ab Crunches",         sets: 3, repsTarget: "15",      type: "Core" },
+      { id: "legraise",    name: "Hanging Leg Raises",        sets: 3, repsTarget: "failure", type: "Core" },
+      { id: "plank3",      name: "Plank",                     sets: 3, repsTarget: "60 sec",  type: "Core" },
     ]
   },
   U2: {
@@ -152,8 +160,10 @@ const WORKOUTS = {
       { id: "dbpress",  name: "Dumbbell Shoulder Press",   sets: 3, repsTarget: "8-10",    type: "Compound" },
       { id: "widepull", name: "Wide Grip Lat Pulldown",    sets: 3, repsTarget: "10-12",   type: "Compound" },
       { id: "facepull", name: "Face Pulls (Cables)",       sets: 3, repsTarget: "15",      type: "Isolation" },
-      { id: "plank",    name: "Plank",                     sets: 3, repsTarget: "60 sec",  type: "Core" },
-      { id: "deadbug",  name: "Dead Bugs",                 sets: 3, repsTarget: "12/side", type: "Core" },
+      { id: "backext",  name: "Back Extensions (erectors)", sets: 3, repsTarget: "12-15",  type: "Isolation" },
+      { id: "cablecrunch4", name: "Cable Ab Crunches",     sets: 3, repsTarget: "15",      type: "Core" },
+      { id: "legraise4",    name: "Hanging Leg Raises",    sets: 3, repsTarget: "failure", type: "Core" },
+      { id: "plank",        name: "Plank",                 sets: 3, repsTarget: "60 sec",  type: "Core" },
     ]
   }
 };
@@ -477,27 +487,47 @@ function App() {
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
+  const timerEndTime = useRef(null);
+
+  const tickTimer = useCallback(() => {
+    if (!timerEndTime.current) return;
+    const remaining = Math.max(0, Math.round((timerEndTime.current - Date.now()) / 1000));
+    setTimer(prev => {
+      if (!prev) return null;
+      if (remaining <= 0 && prev.remaining > 0) {
+        try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(_) {}
+      }
+      return { ...prev, remaining };
+    });
+    if (remaining <= 0) {
+      clearInterval(timerInterval.current);
+    }
+  }, []);
+
   const startTimer = useCallback((exType) => {
     if (timerInterval.current) clearInterval(timerInterval.current);
     const total = REST_SECONDS[exType] || 90;
+    timerEndTime.current = Date.now() + total * 1000;
     setTimer({ exType, total, remaining: total });
-    timerInterval.current = setInterval(() => {
-      setTimer(prev => {
-        if (!prev) return null;
-        if (prev.remaining <= 1) {
-          clearInterval(timerInterval.current);
-          try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(_) {}
-          return { ...prev, remaining: 0 };
-        }
-        return { ...prev, remaining: prev.remaining - 1 };
-      });
-    }, 1000);
-  }, []);
+    timerInterval.current = setInterval(tickTimer, 1000);
+  }, [tickTimer]);
 
   const dismissTimer = useCallback(() => {
     if (timerInterval.current) clearInterval(timerInterval.current);
+    timerEndTime.current = null;
     setTimer(null);
   }, []);
+
+  /* Resume timer correctly when app returns to foreground */
+  useEffect(() => {
+    const onVisibility = () => {
+      if (!document.hidden && timerEndTime.current) {
+        tickTimer();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [tickTimer]);
 
   const exportData = () => {
     const allKeys = [...lsList("trk:"), ...lsList("body:")];
@@ -542,7 +572,10 @@ function App() {
   const todaySched = schedOverride !== null ? SCHEDULE[schedOverride] : getTodaySchedule(sessionDate);
   const isSwapped  = schedOverride !== null && schedOverride !== getDayOfWeek(sessionDate);
   const workout    = WORKOUTS[activeDay];
-  const prevSess   = history[0] || null;
+  const prevSess   = history.find(h => {
+    const exKeys = Object.keys(h.exMap || {});
+    return exKeys.some(id => (h.exMap[id] || []).some(s => s.weight || s.reps));
+  }) || null;
   const warmup     = WARMUPS[activeDay];
 
   /* ═══════════════════ RENDER ═══════════════════ */
@@ -833,11 +866,13 @@ function App() {
                     const groupExercises = group.map(id => exercises.find(e => e.id === id)).filter(Boolean);
 
                     if (ex.id === group[0]) {
+                      const ssLabel = group.length >= 3 ? "TRI-SET" : "SUPERSET";
+                      const ssNote = group.length >= 3 ? "No rest between all three. Rest after completing all." : "No rest between these two. Rest after completing both.";
                       rendered.push(
                         <div key={"ss-" + ssGroup} style={{ border: "1px solid " + ssColor.border, borderRadius: 14, background: ssColor.bg, padding: "2px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px 4px" }}>
-                            <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: 2, color: ssColor.color, fontWeight: 700 }}>{ssColor.label}</span>
-                            <span style={{ fontFamily: mono, fontSize: 9, color: "#555" }}>No rest between these two. Rest after completing both.</span>
+                            <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: 2, color: ssColor.color, fontWeight: 700 }}>{ssLabel}</span>
+                            <span style={{ fontFamily: mono, fontSize: 9, color: "#555" }}>{ssNote}</span>
                           </div>
                           {groupExercises.map((gex, gi) => {
                             const gei = exercises.indexOf(gex);
@@ -1179,17 +1214,26 @@ function App() {
           {Array.from({ length: ex.sets }).map((_, si) => {
             const s      = sets[si] || {};
             const filled = s.weight || s.reps;
+            const prevSet = prevS[si];
+            const prevHint = prevSet && (prevSet.weight || prevSet.reps) ? (prevSet.weight ? prevSet.weight + "kg" : "--") + " x " + (prevSet.reps || "--") : null;
             return (
-              <div key={si} style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, marginBottom: 5, alignItems: "center" }}>
-                <div style={{ fontFamily: mono, fontSize: 13, color: filled ? workout.theme : "#252525", fontWeight: filled ? 700 : 400 }}>
-                  {si + 1}
+              <div key={si} style={{ marginBottom: 5 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "24px 1fr 1fr 2fr 52px", gap: 6, alignItems: "center" }}>
+                  <div style={{ fontFamily: mono, fontSize: 13, color: filled ? workout.theme : "#252525", fontWeight: filled ? 700 : 400 }}>
+                    {si + 1}
+                  </div>
+                  <input type="number" placeholder={prevSet?.weight ? prevSet.weight : "--"} value={s.weight || ""} min="0" step="0.5" onChange={e => updateSet(ex.id, si, "weight", e.target.value)} />
+                  <input type="text" placeholder={prevSet?.reps ? prevSet.reps : ex.repsTarget} value={s.reps || ""} onChange={e => updateSet(ex.id, si, "reps", e.target.value)} />
+                  <input type="text" placeholder="note" value={s.note || ""} onChange={e => updateSet(ex.id, si, "note", e.target.value)} />
+                  <button onClick={() => startTimer(ex.type)} style={{ background: filled ? tc.bg : "#111", border: "1px solid " + (filled ? tc.border : "#1e1e1e"), color: filled ? tc.color : "#2a2a2a", borderRadius: 6, padding: "7px 0", fontFamily: mono, fontSize: 9, letterSpacing: 0.5, width: "100%" }}>
+                    REST
+                  </button>
                 </div>
-                <input type="number" placeholder="--" value={s.weight || ""} min="0" step="0.5" onChange={e => updateSet(ex.id, si, "weight", e.target.value)} />
-                <input type="text" placeholder={ex.repsTarget} value={s.reps || ""} onChange={e => updateSet(ex.id, si, "reps", e.target.value)} />
-                <input type="text" placeholder="note" value={s.note || ""} onChange={e => updateSet(ex.id, si, "note", e.target.value)} />
-                <button onClick={() => startTimer(ex.type)} style={{ background: filled ? tc.bg : "#111", border: "1px solid " + (filled ? tc.border : "#1e1e1e"), color: filled ? tc.color : "#2a2a2a", borderRadius: 6, padding: "7px 0", fontFamily: mono, fontSize: 9, letterSpacing: 0.5, width: "100%" }}>
-                  REST
-                </button>
+                {prevHint && (
+                  <div style={{ paddingLeft: 30, fontFamily: mono, fontSize: 10, color: "#3a3a3a", marginTop: 2 }}>
+                    prev: {prevHint}
+                  </div>
+                )}
               </div>
             );
           })}
